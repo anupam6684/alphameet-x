@@ -1,18 +1,12 @@
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import cors from "cors";
+import registerSocketEvents from "../sockets/index.js";
 
 let io;
 
 export const connectToSocket = (server) => {
-  io = new Server(
-    server,
-    //     {
-    //     cors: {
-    //       origin: process.env.CLIENT_URL,
-    //       methods: ["GET", "POST"],
-    //     },
-    //   }
-  );
+  io = new Server(server);
+  registerSocketEvents(io);
 
   return io;
 };

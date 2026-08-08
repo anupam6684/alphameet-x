@@ -16,14 +16,6 @@ const start = async () => {
     // Initialize Socket.IO
     const io = connectToSocket(server);
 
-    io.on("connection", (socket) => {
-      console.log(`🟢 User Connected: ${socket.id}`);
-
-      socket.on("disconnect", () => {
-        console.log(`🔴 User Disconnected: ${socket.id}`);
-      });
-    });
-
     // Start Server
     server.listen(env.PORT, () => {
       console.log(`🚀 Server running on http://localhost:${env.PORT}`);
