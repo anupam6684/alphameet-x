@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* Light Theme Color Tokens */
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --sidebar-bg: #ffffff;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --text-muted: #64748b;
+  --nav-hover: #f1f5f9;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+}
+
+.dark {
+  /* Cosmic Dark Theme Color Tokens */
+  --background: #0a0c14;
+  --foreground: #f8fafc;
+  --sidebar-bg: #0d0f19;
+  --card-bg: #111422;
+  --card-border: rgba(255, 255, 255, 0.08);
+  --text-muted: #94a3b8;
+  --nav-hover: rgba(255, 255, 255, 0.05);
+  --primary: #2563eb;
+  --primary-hover: #3b82f6;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family:
+    var(--font-sans),
+    system-ui,
+    -apple-system,
+    sans-serif;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism & Adaptive Cards */
+@utility glass-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.25s ease;
+}
+
+@utility input-theme {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--foreground);
+  transition: all 0.2s ease-in-out;
+
+  &:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 12px rgba(37, 99, 235, 0.25);
+    outline: none;
+  }
+}
