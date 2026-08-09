@@ -7,10 +7,10 @@ import bcrypt from "bcrypt";
 const registerUser = async (req, res) => {
   try {
     // 1. Get data from request
-    const { fullName, username, email, password } = req.body;
+    const { fullName, username, email, password, agreeTerms } = req.body;
 
     // 2. Basic validation
-    if (!fullName || !username || !email || !password) {
+    if (!fullName || !username || !email || !password || !agreeTerms) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: "All fields are required",
@@ -38,6 +38,7 @@ const registerUser = async (req, res) => {
       username,
       email,
       password: hashedPassword,
+      agreeTerms,
     });
 
     // 6. Generate JWT

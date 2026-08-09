@@ -1,12 +1,19 @@
-//Express app
+// Express app
 import express from "express";
 import cors from "cors";
 import authRoute from "./src/routes/auth.routes.js";
 
 const app = express();
 
+// CORS
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  }),
+);
+
 // Middleware
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -20,7 +27,5 @@ app.get("/", (req, res) => {
 
 // API Routes
 app.use("/api/v1/auth", authRoute);
-// app.use("/api/users", userRoutes);
-// app.use("/api/meetings", meetingRoutes);
 
 export default app;

@@ -1,25 +1,58 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import {
   Mic,
   MicOff,
-  Camera,
-  CameraOff,
+  Video,
+  VideoOff,
   Monitor,
   MessageSquare,
   Users,
-  PhoneOff,
-  Send,
-  X,
+  MoreHorizontal,
+  Clock,
+  LayoutGrid,
 } from "lucide-react";
+
+import ChatPanel from "@/app/components/ChatPanel"; // Adjust path if needed
 
 export default function RoomClientWrapper({ roomId }) {
   const router = useRouter();
+
+  // Media & Panel States
   const [isMicOn, setIsMicOn] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [initialPanelTab, setInitialPanelTab] = useState("chat"); // 'chat' | 'participants'
+
+  // Timer State
+  const [seconds, setSeconds] = useState(765); // 00:12:45
+
+  useEffect(() => {
+    const timer = setInterval(() => setSeconds((prev) => prev + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (totalSeconds) => {
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    return `${hrs > 0 ? `${hrs.toString().padStart(2, "0")}:` : ""}${mins
+      .toString()
+      .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  // Sample Participants List
+  const participants = [
+    { name: "You (Host)", isMuted: !isMicOn, isVideoOff: !isCameraOn },
+    { name: "Sarah Miller", isMuted: false, isVideoOff: false },
+    { name: "Alex Johnson", isMuted: true, isVideoOff: false },
+  ];
+
+  // Messages State
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -34,176 +67,255 @@ export default function RoomClientWrapper({ roomId }) {
       text: "Yes, crystal clear!",
     },
   ]);
-  const [newMessage, setNewMessage] = useState("");
 
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
+  const handleSendMessage = (text) => {
     setMessages((prev) => [
       ...prev,
       {
         id: Date.now(),
         sender: "You",
-        time: "Just now",
-        text: newMessage.trim(),
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        text,
       },
     ]);
-    setNewMessage("");
+  };
+
+  const handleOpenPanel = (tab) => {
+    if (isPanelOpen && initialPanelTab === tab) {
+      setIsPanelOpen(false);
+    } else {
+      setInitialPanelTab(tab);
+      setIsPanelOpen(true);
+    }
   };
 
   return (
-    <div className="h-screen w-screen bg-slate-950 text-white flex flex-col overflow-hidden relative selection:bg-blue-600">
-      {/* Top Bar */}
-      <header className="h-16 border-b border-white/10 px-6 flex items-center justify-between shrink-0 bg-slate-900/80 backdrop-blur-md z-20">
+    <div className="h-screen w-screen bg-[#0b0f17] text-white flex flex-col overflow-hidden relative selection:bg-blue-600 font-sans">
+      {/* =========================================================================
+          1. TOP HEADER BAR
+         ========================================================================= */}
+      <header className="h-16 px-6 flex items-center justify-between shrink-0 bg-[#0b0f17]/90 z-20">
+        {/* Left: Room ID */}
         <div className="flex items-center gap-3">
-          <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-          <h1 className="font-bold text-sm tracking-wide">
-            Meeting Room:{" "}
-            <span className="font-mono text-blue-400">{roomId}</span>
+          <h1 className="font-semibold text-sm tracking-wide text-slate-200">
+            Room ID:{" "}
+            <span className="font-mono text-white font-bold">
+              {roomId || "ABCD1234"}
+            </span>
           </h1>
         </div>
-        <div className="text-xs bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg text-slate-300">
-          🔒 End-to-End Encrypted
+
+        {/* Right Header Status Indicators & End Call */}
+        <div className="flex items-center gap-3">
+          {/* Active Participants Badge Button */}
+          <button
+            onClick={() => handleOpenPanel("participants")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 font-medium transition-colors cursor-pointer"
+          >
+            <Users className="w-4 h-4 text-slate-300" />
+            <span>{participants.length}</span>
+          </button>
+
+          {/* Quick Chat Toggle */}
+          <button
+            onClick={() => handleOpenPanel("chat")}
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 transition-colors cursor-pointer"
+          >
+            <MessageSquare className="w-4 h-4" />
+          </button>
+
+          {/* Layout Toggle */}
+          <button className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 transition-colors cursor-pointer">
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+
+          {/* Elapsed Time Timer */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-mono text-slate-300">
+            <Clock className="w-3.5 h-3.5 text-slate-400" />
+            <span>{formatTime(seconds)}</span>
+          </div>
+
+          {/* End Call Button */}
+          <button
+            onClick={() => router.push("/home")}
+            className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 font-bold text-white text-xs shadow-lg shadow-red-600/30 transition-all cursor-pointer"
+          >
+            End Call
+          </button>
         </div>
       </header>
 
-      {/* Main Grid View */}
-      <div className="flex-1 flex overflow-hidden relative">
-        <div className="flex-1 p-4 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto">
-          {/* Local Feed */}
-          <div className="relative rounded-2xl bg-slate-900 border border-white/10 overflow-hidden flex items-center justify-center min-h-[240px]">
+      {/* =========================================================================
+          2. MAIN STAGE CANVAS + STANDALONE CHAT PANEL
+         ========================================================================= */}
+      <div className="flex-1 flex overflow-hidden relative p-4 gap-4">
+        {/* Main Video Stage Container */}
+        <div className="flex-1 relative rounded-3xl bg-slate-900/60 border border-white/10 overflow-hidden flex items-center justify-center shadow-2xl">
+          {/* Remote Speaker Video */}
+          <Image
+            src="/images/person3.png"
+            alt="Sarah Miller"
+            fill
+            className="object-cover object-center"
+            priority
+          />
+
+          {/* Main Speaker Label */}
+          <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/10 text-xs font-semibold text-white">
+            Sarah Miller
+          </div>
+
+          {/* Floating Picture-in-Picture Self Preview */}
+          <motion.div
+            drag
+            dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+            className="absolute bottom-5 right-5 w-44 sm:w-56 h-28 sm:h-36 rounded-2xl border-2 border-white/20 bg-slate-950 overflow-hidden shadow-2xl z-10 cursor-grab active:cursor-grabbing"
+          >
             {isCameraOn ? (
-              <div className="text-center space-y-2">
-                <div className="w-20 h-20 rounded-full bg-blue-600/30 border border-blue-400/40 text-3xl flex items-center justify-center mx-auto">
-                  👤
-                </div>
-                <p className="text-xs font-semibold text-slate-300">
-                  You (Host)
-                </p>
-              </div>
+              <Image
+                src="/person1.png"
+                alt="Your Preview"
+                fill
+                className="object-cover object-center"
+              />
             ) : (
-              <div className="text-slate-500 text-xs flex flex-col items-center gap-2">
-                <CameraOff className="w-8 h-8" />
-                <span>Camera Off</span>
+              <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-slate-400 bg-slate-900">
+                <VideoOff className="w-6 h-6 text-red-400" />
+                <span className="text-[10px] font-medium">Camera Off</span>
               </div>
             )}
-            <div className="absolute bottom-3 left-3 bg-black/60 px-3 py-1 rounded-md text-xs font-medium">
+            <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-semibold text-white">
               You
             </div>
-          </div>
-
-          {/* Participant 2 */}
-          <div className="relative rounded-2xl bg-slate-900 border border-white/10 overflow-hidden flex items-center justify-center min-h-[240px]">
-            <div className="text-center space-y-2">
-              <div className="w-20 h-20 rounded-full bg-purple-600/30 border border-purple-400/40 text-3xl flex items-center justify-center mx-auto">
-                👥
-              </div>
-              <p className="text-xs font-semibold text-slate-300">
-                Sarah Miller
-              </p>
-            </div>
-            <div className="absolute bottom-3 left-3 bg-black/60 px-3 py-1 rounded-md text-xs font-medium">
-              Sarah Miller
-            </div>
-          </div>
+          </motion.div>
         </div>
 
-        {/* Chat Panel Sidebar */}
-        {isChatOpen && (
-          <div className="w-full md:w-80 bg-slate-900 border-l border-white/10 flex flex-col absolute md:relative inset-y-0 right-0 z-30 transition-all shadow-2xl">
-            <div className="p-4 border-b border-white/10 flex items-center justify-between">
-              <h2 className="text-sm font-bold flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-blue-400" />
-                <span>In-Call Messages</span>
-              </h2>
-              <button
-                onClick={() => setIsChatOpen(false)}
-                className="p-1 text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+        {/* =========================================================================
+            3. STANDALONE REUSABLE CHAT PANEL COMPONENT
+           ========================================================================= */}
+        <ChatPanel
+          isOpen={isPanelOpen}
+          onClose={() => setIsPanelOpen(false)}
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          participants={participants}
+          defaultTab={initialPanelTab}
+        />
+      </div>
 
-            <div className="flex-1 p-4 overflow-y-auto space-y-3">
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  className="bg-white/5 p-3 rounded-xl border border-white/5 space-y-1"
-                >
-                  <div className="flex items-center justify-between text-[10px] text-slate-400">
-                    <span className="font-bold text-blue-400">{m.sender}</span>
-                    <span>{m.time}</span>
-                  </div>
-                  <p className="text-xs text-slate-200">{m.text}</p>
-                </div>
-              ))}
-            </div>
-
-            <form
-              onSubmit={handleSendMessage}
-              className="p-3 border-t border-white/10 flex gap-2"
+      {/* =========================================================================
+          4. BOTTOM CONTROL BAR
+         ========================================================================= */}
+      <footer className="h-20 bg-[#0b0f17] px-6 flex items-center justify-center shrink-0 z-20 border-t border-white/5">
+        <div className="flex items-center gap-6 sm:gap-8">
+          {/* Mic Toggle */}
+          <button
+            onClick={() => setIsMicOn((prev) => !prev)}
+            className="flex flex-col items-center gap-1 group cursor-pointer"
+          >
+            <div
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center border transition-all ${
+                isMicOn
+                  ? "bg-white/5 border-white/10 group-hover:bg-white/15 text-white"
+                  : "bg-red-500/20 border-red-500/40 text-red-400"
+              }`}
             >
-              <input
-                type="text"
-                placeholder="Type a message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white focus:outline-none focus:border-blue-500"
-              />
-              <button
-                type="submit"
-                className="p-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </form>
-          </div>
-        )}
-      </div>
+              {isMicOn ? (
+                <Mic className="w-5 h-5" />
+              ) : (
+                <MicOff className="w-5 h-5" />
+              )}
+            </div>
+            <span className="text-[11px] font-medium text-slate-400 group-hover:text-slate-200">
+              {isMicOn ? "Mute" : "Unmute"}
+            </span>
+          </button>
 
-      {/* Control Bar */}
-      <div className="h-20 border-t border-white/10 bg-slate-900/90 px-6 flex items-center justify-center gap-4 shrink-0 z-20">
-        <button
-          onClick={() => setIsMicOn(!isMicOn)}
-          className={`p-3.5 rounded-2xl border transition-all ${isMicOn ? "bg-white/10 border-white/10 hover:bg-white/20" : "bg-red-500/20 border-red-500/40 text-red-400"}`}
-        >
-          {isMicOn ? (
-            <Mic className="w-5 h-5" />
-          ) : (
-            <MicOff className="w-5 h-5" />
-          )}
-        </button>
+          {/* Camera Toggle */}
+          <button
+            onClick={() => setIsCameraOn((prev) => !prev)}
+            className="flex flex-col items-center gap-1 group cursor-pointer"
+          >
+            <div
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center border transition-all ${
+                isCameraOn
+                  ? "bg-white/5 border-white/10 group-hover:bg-white/15 text-white"
+                  : "bg-red-500/20 border-red-500/40 text-red-400"
+              }`}
+            >
+              {isCameraOn ? (
+                <Video className="w-5 h-5" />
+              ) : (
+                <VideoOff className="w-5 h-5" />
+              )}
+            </div>
+            <span className="text-[11px] font-medium text-slate-400 group-hover:text-slate-200">
+              {isCameraOn ? "Stop Video" : "Start Video"}
+            </span>
+          </button>
 
-        <button
-          onClick={() => setIsCameraOn(!isCameraOn)}
-          className={`p-3.5 rounded-2xl border transition-all ${isCameraOn ? "bg-white/10 border-white/10 hover:bg-white/20" : "bg-red-500/20 border-red-500/40 text-red-400"}`}
-        >
-          {isCameraOn ? (
-            <Camera className="w-5 h-5" />
-          ) : (
-            <CameraOff className="w-5 h-5" />
-          )}
-        </button>
+          {/* Share Screen */}
+          <button className="flex flex-col items-center gap-1 group cursor-pointer">
+            <div className="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-white/15 flex items-center justify-center text-white transition-all">
+              <Monitor className="w-5 h-5" />
+            </div>
+            <span className="text-[11px] font-medium text-slate-400 group-hover:text-slate-200">
+              Share Screen
+            </span>
+          </button>
 
-        <button className="p-3.5 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/20 hidden sm:block">
-          <Monitor className="w-5 h-5 text-blue-400" />
-        </button>
+          {/* Chat Button */}
+          <button
+            onClick={() => handleOpenPanel("chat")}
+            className="flex flex-col items-center gap-1 group cursor-pointer"
+          >
+            <div
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center border transition-all ${
+                isPanelOpen && initialPanelTab === "chat"
+                  ? "bg-blue-600 border-blue-500 text-white"
+                  : "bg-white/5 border-white/10 group-hover:bg-white/15 text-white"
+              }`}
+            >
+              <MessageSquare className="w-5 h-5" />
+            </div>
+            <span className="text-[11px] font-medium text-slate-400 group-hover:text-slate-200">
+              Chat
+            </span>
+          </button>
 
-        <button
-          onClick={() => setIsChatOpen(!isChatOpen)}
-          className={`p-3.5 rounded-2xl border transition-all ${isChatOpen ? "bg-blue-600 border-blue-500" : "bg-white/10 border-white/10 hover:bg-white/20"}`}
-        >
-          <MessageSquare className="w-5 h-5" />
-        </button>
+          {/* Participants Button */}
+          <button
+            onClick={() => handleOpenPanel("participants")}
+            className="flex flex-col items-center gap-1 group cursor-pointer"
+          >
+            <div
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center border transition-all ${
+                isPanelOpen && initialPanelTab === "participants"
+                  ? "bg-blue-600 border-blue-500 text-white"
+                  : "bg-white/5 border-white/10 group-hover:bg-white/15 text-white"
+              }`}
+            >
+              <Users className="w-5 h-5" />
+            </div>
+            <span className="text-[11px] font-medium text-slate-400 group-hover:text-slate-200">
+              Participants
+            </span>
+          </button>
 
-        <button
-          onClick={() => router.push("/home")}
-          className="px-6 py-3.5 rounded-2xl bg-red-600 hover:bg-red-500 font-bold text-white shadow-lg shadow-red-600/30 flex items-center gap-2"
-        >
-          <PhoneOff className="w-5 h-5" />
-          <span className="hidden sm:inline">End Call</span>
-        </button>
-      </div>
+          {/* More Options */}
+          <button className="flex flex-col items-center gap-1 group cursor-pointer">
+            <div className="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-white/15 flex items-center justify-center text-white transition-all">
+              <MoreHorizontal className="w-5 h-5" />
+            </div>
+            <span className="text-[11px] font-medium text-slate-400 group-hover:text-slate-200">
+              More
+            </span>
+          </button>
+        </div>
+      </footer>
     </div>
   );
 }

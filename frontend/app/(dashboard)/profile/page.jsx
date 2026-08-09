@@ -1,60 +1,192 @@
 "use client";
 
-import { User, Mail, Shield } from "lucide-react";
+import { useState } from "react";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { Camera, Save, Loader2 } from "lucide-react";
+
+// Staggered Container Animation Variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+  },
+};
 
 export default function ProfilePage() {
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: "Anupam Jana",
+    email: "anupam@example.com",
+    phone: "+91 98765 43210",
+    bio: "Full Stack Developer | Building modern web applications.",
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    // Simulate API save delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setIsSaving(false);
+  };
+
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight">
-          Account Profile
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6 w-full max-w-5xl mx-auto py-2"
+    >
+      {/* Page Title */}
+      <motion.div variants={itemVariants}>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+          Profile
         </h1>
-        <p className="text-sm text-[var(--text-muted)] mt-1">
-          Manage your personal credentials and public display profile.
+        <p className="text-xs sm:text-sm text-[var(--text-muted)] font-medium mt-1">
+          Manage your personal information
         </p>
-      </div>
+      </motion.div>
 
-      <div className="glass-card p-8 rounded-3xl space-y-6">
-        <div className="flex items-center gap-4 pb-6 border-b border-[var(--card-border)]">
-          <div className="w-20 h-20 rounded-full bg-blue-600/20 border-2 border-blue-500 text-blue-500 flex items-center justify-center text-3xl font-bold">
-            AJ
-          </div>
-          <div>
-            <h2 className="text-xl font-bold">Anupam Jana</h2>
-            <p className="text-xs text-[var(--text-muted)]">
-              Software Developer &amp; Student
-            </p>
-          </div>
-        </div>
+      {/* Main Split Content Grid */}
+      <motion.div
+        variants={itemVariants}
+        className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start pt-2"
+      >
+        {/* =========================================================================
+            LEFT COLUMN: Avatar Showcase & Camera Upload Badge (4 cols)
+           ========================================================================= */}
+        <div className="md:col-span-4 flex flex-col items-center justify-center p-6">
+          <div className="relative group cursor-pointer">
+            {/* Main Circular Profile Picture Container */}
+            <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full border-2 border-blue-500/40 p-1 shadow-2xl relative overflow-hidden bg-slate-800">
+              <Image
+                src="/person1.png"
+                alt="Profile Avatar"
+                fill
+                className="object-cover rounded-full"
+                priority
+              />
+            </div>
 
-        <div className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-[var(--text-muted)]">
-              Full Name
-            </label>
-            <input
-              type="text"
-              defaultValue="Anupam Jana"
-              className="w-full px-4 py-2.5 rounded-xl input-theme text-sm"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-[var(--text-muted)]">
-              Email Address
-            </label>
-            <input
-              type="email"
-              defaultValue="anupam@example.com"
-              className="w-full px-4 py-2.5 rounded-xl input-theme text-sm"
-            />
+            {/* Camera Upload Badge Overlay */}
+            <button
+              type="button"
+              className="absolute bottom-1 right-1 w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-500 text-white border-2 border-[var(--background)] flex items-center justify-center shadow-lg transition-transform hover:scale-110 cursor-pointer"
+              aria-label="Upload new avatar"
+            >
+              <Camera className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
-        <button className="px-6 py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-md">
-          Save Profile Changes
-        </button>
-      </div>
-    </div>
+        {/* =========================================================================
+            RIGHT COLUMN: Editable Profile Form Card (8 cols)
+           ========================================================================= */}
+        <div className="md:col-span-8">
+          <form
+            onSubmit={handleSubmit}
+            className="glass-card p-6 sm:p-8 rounded-3xl border border-[var(--card-border)] space-y-5 shadow-xl bg-slate-900/40"
+          >
+            {/* Full Name Field */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[var(--text-muted)]">
+                Full Name
+              </label>
+              <input
+                type="text"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                placeholder="Anupam Jana"
+                className="w-full px-4 py-3 rounded-xl input-theme text-sm font-medium transition-colors"
+              />
+            </div>
+
+            {/* Email Address Field */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[var(--text-muted)]">
+                Email
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="anupam@example.com"
+                className="w-full px-4 py-3 rounded-xl input-theme text-sm font-medium transition-colors"
+              />
+            </div>
+
+            {/* Phone Number Field */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[var(--text-muted)]">
+                Phone
+              </label>
+              <input
+                type="text"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="+91 98765 43210"
+                className="w-full px-4 py-3 rounded-xl input-theme text-sm font-medium transition-colors"
+              />
+            </div>
+
+            {/* Bio Field */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[var(--text-muted)]">
+                Bio
+              </label>
+              <textarea
+                name="bio"
+                rows={3}
+                value={formData.bio}
+                onChange={handleChange}
+                placeholder="Tell us about yourself..."
+                className="w-full px-4 py-3 rounded-xl input-theme text-sm font-medium transition-colors resize-none"
+              />
+            </div>
+
+            {/* Save Changes Button */}
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              type="submit"
+              disabled={isSaving}
+              className="w-full py-3.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 shadow-lg shadow-blue-600/30 border border-blue-400/30 transition-all flex items-center justify-center gap-2 text-sm mt-4 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving Changes...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Save Changes</span>
+                </>
+              )}
+            </motion.button>
+          </form>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
