@@ -55,6 +55,10 @@ const userSchema = new mongoose.Schema(
       enum: ["online", "offline", "busy"],
       default: "offline",
     },
+    agreeTerms: {
+      type: Boolean,
+      default: false,
+    },
 
     isVerified: {
       type: Boolean,
