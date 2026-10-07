@@ -1,25 +1,61 @@
+import MeetingParticipant from "../models/MeetingParticipant.js";
+
 const meetingSocket = (io, socket) => {
-  // create room socket
-  socket.on("join-room", ({ roomId }) => {
-    //create room 
-    socket.join(roomId);
+  // Join room
+  socket.on("join-room", async ({ roomId, userId, userName }) => {
+    try {
+      socket.join(roomId);
 
-    console.log(`${socket.id} joined ${roomId}`);
+      // Remove old participant record for this user in this room
+      await MeetingParticipant.deleteMany({
+        roomId,
+        userId,
+      });
 
-    // Sends to everyone(only this RoomId) except the sender. 
-    socket.to(roomId).emit("user-joined", {
-      userId: socket.id,
-    });
+      const participant = await MeetingParticipant.create({
+        roomId,
+        userId,
+        userName,
+        socketId: socket.id,
+      });
+
+      socket.to(roomId).emit("user-joined", {
+        participant: {
+          id: participant._id,
+          userId: participant.userId,
+          name: participant.userName,
+          socketId: participant.socketId,
+        },
+      });
+    } catch (error) {
+      console.error("❌ Failed to join meeting:", error);
+    }
   });
 
-  // leave room socket
-  socket.on("leave-room", ({ roomId }) => {
-    socket.leave(roomId);
+  // Leave room
+  socket.on("leave-room", async ({ roomId }) => {
+    try {
+      const participant = await MeetingParticipant.findOneAndDelete({
+        roomId,
+        socketId: socket.id,
+      });
+      socket.leave(roomId);
 
-    // Sends to everyone(only this RoomId) except the sender. 
-    socket.to(roomId).emit("user-left", {
-      userId: socket.id,
-    });
+      if (participant) {
+        console.log(`🔴 ${participant.userName} left room ${roomId}`);
+      }
+
+      socket.to(roomId).emit("user-left", {
+        participant: {
+          id: participant._id,
+          userId: participant.userId,
+          userName: participant.userName,
+          socketId: participant.socketId,
+        },
+      });
+    } catch (error) {
+      console.error("❌ Failed to leave meeting:", error);
+    }
   });
 };
 

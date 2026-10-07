@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useApp } from "@/context/AppContext";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Camera, Save, Loader2 } from "lucide-react";
@@ -26,13 +27,32 @@ const itemVariants = {
 };
 
 export default function ProfilePage() {
+  const { user, setUser } = useApp();
   const [isSaving, setIsSaving] = useState(false);
+
+  // Initialize state cleanly with fallback values to prevent undefined access
   const [formData, setFormData] = useState({
-    fullName: "Anupam Jana",
-    email: "anupam@example.com",
-    phone: "+91 98765 43210",
-    bio: "Full Stack Developer | Building modern web applications.",
+    fullName: "",
+    username: "",
+    email: "",
+    phone: "",
+    bio: "",
+    avatar: "",
   });
+
+  // Sync user data once when user object loads
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        fullName: user.fullName || "",
+        username: user.username || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        bio: user.bio || "",
+        avatar: user.avatar || "",
+      });
+    }
+  }, [user]); // Added proper dependency array!
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,9 +62,20 @@ export default function ProfilePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-    // Simulate API save delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSaving(false);
+
+    try {
+      // Simulate API update or call your backend endpoint here
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Update global context state
+      if (setUser) {
+        setUser((prev) => ({ ...prev, ...formData }));
+      }
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -77,9 +108,10 @@ export default function ProfilePage() {
             {/* Main Circular Profile Picture Container */}
             <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full border-2 border-blue-500/40 p-1 shadow-2xl relative overflow-hidden bg-slate-800">
               <Image
-                src="/person1.png"
+                src={formData.avatar || "/images/person1.png"}
                 alt="Profile Avatar"
                 fill
+                sizes="(max-width: 640px) 144px, 176px"
                 className="object-cover rounded-full"
                 priority
               />
@@ -115,6 +147,21 @@ export default function ProfilePage() {
                 value={formData.fullName}
                 onChange={handleChange}
                 placeholder="Anupam Jana"
+                className="w-full px-4 py-3 rounded-xl input-theme text-sm font-medium transition-colors"
+              />
+            </div>
+
+            {/* Username Field */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[var(--text-muted)]">
+                Username
+              </label>
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                placeholder="anupam"
                 className="w-full px-4 py-3 rounded-xl input-theme text-sm font-medium transition-colors"
               />
             </div>

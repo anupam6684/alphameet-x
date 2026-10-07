@@ -14,22 +14,16 @@ const registerSocketEvents = (io) => {
       socketId: socket.id,
     });
 
-    // Test event
-    socket.on("ping", (data) => {
-      console.log("📩 Ping from Client:", data);
-
-      socket.emit("pong", {
-        success: true,
-        message: "Pong from Server 🏓",
-        receivedData: data,
-      });
-    });
-
     // Register Meeting Events
     meetingSocket(io, socket);
 
     // Register Chat Events
     chatSocket(io, socket);
+
+    // signal event
+    socket.on("signal", (toId, message) => {
+      io.to(toId).emit("signal", socket.id, message);
+    });
 
     // Handle Errors
     socket.on("error", (error) => {

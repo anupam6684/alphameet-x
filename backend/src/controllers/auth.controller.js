@@ -109,17 +109,14 @@ const loginUser = async (req, res) => {
       expiresIn: "7d",
     });
 
+    // Remove password before sending user to frontend
+    user.password = undefined;
+
     return res.status(StatusCodes.OK).json({
       success: true,
       message: "Login successful",
       token,
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        username: user.username,
-        email: user.email,
-        avatar: user.avatar,
-      },
+      user,
     });
   } catch (error) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -157,34 +154,4 @@ const refreshAccessToken = async (req, res) => {
   }
 };
 
-const getCurrentUser = async (req, res) => {
-  try {
-    const { UserID } = req.body;
-    const user = await User.findById(UserID).select("-password");
-
-    if (!user) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    return res.status(StatusCodes.OK).json({
-      success: true,
-      user,
-    });
-  } catch (error) {
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-export {
-  registerUser,
-  loginUser,
-  logoutUser,
-  refreshAccessToken,
-  getCurrentUser,
-};
+export { registerUser, loginUser, logoutUser, refreshAccessToken };

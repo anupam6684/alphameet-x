@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const chatMessageSchema = new mongoose.Schema(
+const MeetingParticipantSchema = new mongoose.Schema(
   {
     roomId: {
       type: String,
@@ -8,21 +8,25 @@ const chatMessageSchema = new mongoose.Schema(
       index: true,
     },
 
-    senderId: {
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
 
-    senderName: {
+    userName: {
       type: String,
       required: true,
     },
 
-    message: {
+    socketId: {
       type: String,
       required: true,
-      trim: true,
+    },
+
+    joinedAt: {
+      type: Date,
+      default: Date.now,
     },
   },
   {
@@ -30,6 +34,9 @@ const chatMessageSchema = new mongoose.Schema(
   },
 );
 
-const ChatMessage = mongoose.model("ChatMessage", chatMessageSchema);
+const MeetingParticipant = mongoose.model(
+  "MeetingParticipant",
+  MeetingParticipantSchema,
+);
 
-export default ChatMessage;
+export default MeetingParticipant;

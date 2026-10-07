@@ -47,7 +47,7 @@ export const refreshAccessToken = async () => {
 // Get Current User
 export const getCurrentUser = async () => {
   try {
-    const response = await api.get("/auth/current-user");
+    const response = await api.get("/user/profile");
 
     return response.data;
   } catch (error) {
