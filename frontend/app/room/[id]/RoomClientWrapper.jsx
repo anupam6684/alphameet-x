@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -16,10 +16,17 @@ import {
   Clock,
   LayoutGrid,
 } from "lucide-react";
+import { useApp } from "@/context/AppContext";
 
 import ChatPanel from "@/app/components/ChatPanel"; // Adjust path if needed
 
+// // socket
+import socket from "@/services/socket.service";
+import { getallMessage } from "@/services/chat.services";
+import { toast } from "react-toastify";
+
 export default function RoomClientWrapper({ roomId }) {
+  const { user } = useApp();
   const router = useRouter();
 
   // Media & Panel States
@@ -53,36 +60,21 @@ export default function RoomClientWrapper({ roomId }) {
   ];
 
   // Messages State
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: "Sarah Miller",
-      time: "10:42 AM",
-      text: "Hey everyone! Can you see my screen?",
-    },
-    {
-      id: 2,
-      sender: "Anupam Jana",
-      time: "10:43 AM",
-      text: "Yes, crystal clear!",
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
 
   const handleSendMessage = (text) => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        sender: "You",
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        text,
-      },
-    ]);
-  };
+    if (!user) {
+      toast.error("Please login to send a message");
+      return;
+    }
 
+    socket.emit("chat-message", {
+      roomId,
+      message: text,
+      senderId: user._id,
+      senderName: user.fullName,
+    });
+  };
   const handleOpenPanel = (tab) => {
     if (isPanelOpen && initialPanelTab === tab) {
       setIsPanelOpen(false);
@@ -91,6 +83,99 @@ export default function RoomClientWrapper({ roomId }) {
       setIsPanelOpen(true);
     }
   };
+
+  useEffect(() => {
+    if (!roomId) return;
+
+    console.log("Joining room:", roomId);
+
+    socket.emit("join-room", {
+      roomId,
+    });
+
+    return () => {
+      socket.emit("leave-room", {
+        roomId,
+      });
+    };
+  }, [roomId]);
+
+  useEffect(() => {
+    const handleUserJoined = ({ userId }) => {
+      console.log("🟢 User joined:", userId);
+    };
+
+    const handleUserLeft = ({ userId }) => {
+      console.log("🔴 User left:", userId);
+    };
+
+    socket.on("user-joined", handleUserJoined);
+    socket.on("user-left", handleUserLeft);
+
+    return () => {
+      socket.off("user-joined", handleUserJoined);
+      socket.off("user-left", handleUserLeft);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleReceiveMessage = ({
+      id,
+      senderId,
+      senderName,
+      message,
+      createdAt,
+    }) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id,
+          sender: senderName,
+          senderId,
+          time: new Date(createdAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          text: message,
+        },
+      ]);
+    };
+
+    socket.on("receive-message", handleReceiveMessage);
+
+    return () => {
+      socket.off("receive-message", handleReceiveMessage);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!roomId) return;
+
+    const fetchMessages = async () => {
+      try {
+        const data = await getallMessage(roomId);
+
+        if (data.success) {
+          const formattedMessages = data.messages.map((message) => ({
+            id: message._id,
+            sender: message.senderName,
+            senderId: message.senderId,
+            time: new Date(message.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            text: message.message,
+          }));
+
+          setMessages(formattedMessages);
+        }
+      } catch (error) {
+        console.error("❌ Failed to fetch messages:", error);
+      }
+    };
+
+    fetchMessages();
+  }, [roomId]);
 
   return (
     <div className="h-screen w-screen bg-[#0b0f17] text-white flex flex-col overflow-hidden relative selection:bg-blue-600 font-sans">

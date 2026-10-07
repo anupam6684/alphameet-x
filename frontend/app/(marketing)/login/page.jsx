@@ -13,6 +13,8 @@ import { toast } from "react-toastify";
 import Logo from "../../components/Logo";
 import { loginUser } from "@/services/auth.services";
 
+import { useApp } from "@/context/AppContext";
+
 // =============================================================================
 // ZOD VALIDATION SCHEMA
 // =============================================================================
@@ -22,6 +24,8 @@ const loginSchema = z.object({
 });
 
 export default function LoginPage() {
+  const { setUser, user, token, setToken } = useApp();
+
   const router = useRouter();
   const [serverError, setServerError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -49,10 +53,7 @@ export default function LoginPage() {
     };
 
     try {
-      console.log("Submitting payload:", payload);
-
       const response = await loginUser(payload);
-      console.log("Registration response:", response);
 
       // 1. Show Success Toast
       toast.success(
@@ -60,9 +61,14 @@ export default function LoginPage() {
       );
 
       // 2. Redirect User to Home / Dashboard
-      router.push("/home");
+      if (response.success) {
+        router.push("/home");
+        setToken(response.token);
+        setUser(response.user);
+        console.log(response.user);
+      }
     } catch (err) {
-      console.error("Registration error:", err);
+      console.log("Registration error:", err);
 
       // 3. Extract exact error message from backend or fallback to default
       const errorMessage =

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Home,
@@ -20,6 +20,8 @@ import {
 import Logo from "./Logo";
 import { useTheme } from "./ThemeProvider";
 
+import { useApp } from "@/context/AppContext";
+
 const navItems = [
   { name: "Home", href: "/home", icon: Home },
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -29,11 +31,18 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+  const router = useRouter();
+  const { logout } = useApp();
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
 
   const toggleMobileMenu = () => setIsMobileOpen((prev) => !prev);
+
+  const handleLogout = () => {
+    logout();
+    router.replace("/login"); // router.replace prevents the user from clicking 'Back' into a protected page
+  };
 
   return (
     <>
@@ -139,13 +148,12 @@ export default function Sidebar() {
                   </div>
                 </button>
 
-                <Link
-                  href="/login"
-                  className="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-500/10 transition-colors w-full"
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-500/10 transition-all duration-200 w-full text-left"
                 >
-                  <LogOut className="w-5 h-5" />
                   <span>Logout</span>
-                </Link>
+                </button>
               </div>
             </motion.aside>
           </>
@@ -209,13 +217,12 @@ export default function Sidebar() {
             </div>
           </button>
 
-          <Link
-            href="/login"
+          <button
+            onClick={handleLogout}
             className="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-500/10 transition-all duration-200 w-full text-left"
           >
-            <LogOut className="w-5 h-5" />
             <span>Logout</span>
-          </Link>
+          </button>
         </div>
       </aside>
     </>

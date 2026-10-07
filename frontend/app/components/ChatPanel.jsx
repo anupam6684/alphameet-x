@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, Users, X, Send, Mic, Video } from "lucide-react";
+import { useApp } from "@/context/AppContext";
 
 export default function ChatPanel({
   isOpen,
@@ -18,6 +19,8 @@ export default function ChatPanel({
   const [activeTab, setActiveTab] = useState("chat"); // 'chat' | 'participants'
   const [newMessage, setNewMessage] = useState("");
   const chatEndRef = useRef(null);
+  //current user user
+  const { user } = useApp();
 
   // Auto-scroll to the latest message
   useEffect(() => {
@@ -95,7 +98,8 @@ export default function ChatPanel({
             <>
               <div className="flex-1 p-4 overflow-y-auto space-y-3.5">
                 {messages.map((m) => {
-                  const isMe = m.sender === "You";
+                  const isMe = String(m.senderId) === String(user?._id);
+
                   return (
                     <div
                       key={m.id}

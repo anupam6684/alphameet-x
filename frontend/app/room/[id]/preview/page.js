@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -14,6 +14,7 @@ import {
   Volume2,
   Sparkles,
 } from "lucide-react";
+import { useApp } from "@/context/AppContext";
 
 export default function PreviewPage({ params }) {
   // Next.js 15+ Async params unwrap
@@ -21,10 +22,13 @@ export default function PreviewPage({ params }) {
   const router = useRouter();
 
   // Media States
-  const [userName, setUserName] = useState("Anupam");
+  const [userName, setUserName] = useState("");
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isPlayingTestSound, setIsPlayingTestSound] = useState(false);
+
+  // appcontext
+  const { user } = useApp();
 
   const handleJoinNow = () => {
     if (!userName.trim()) return;
@@ -35,6 +39,11 @@ export default function PreviewPage({ params }) {
     setIsPlayingTestSound(true);
     setTimeout(() => setIsPlayingTestSound(false), 2000);
   };
+  useEffect(() => {
+    if (user) {
+      setUserName(user.name || user.username || "");
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen w-full bg-[var(--background)] text-[var(--foreground)] flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden">
