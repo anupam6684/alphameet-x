@@ -24,6 +24,7 @@ import ChatPanel from "@/app/components/ChatPanel"; // Adjust path if needed
 import socket from "@/services/socket.service";
 import { getallMessage } from "@/services/chat.services";
 import { toast } from "react-toastify";
+import { getmeetingParticipant } from "@/services/meeting.services";
 
 export default function RoomClientWrapper({ roomId }) {
   const { user } = useApp();
@@ -52,15 +53,18 @@ export default function RoomClientWrapper({ roomId }) {
       .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Sample Participants List
-  const participants = [
-    { name: "You (Host)", isMuted: !isMicOn, isVideoOff: !isCameraOn },
-    { name: "Sarah Miller", isMuted: false, isVideoOff: false },
-    { name: "Alex Johnson", isMuted: true, isVideoOff: false },
-  ];
+  // // Sample Participants List
+  // const participants = [
+  //   { name: "You (Host)", isMuted: !isMicOn, isVideoOff: !isCameraOn },
+  //   { name: "Sarah Miller", isMuted: false, isVideoOff: false },
+  //   { name: "Alex Johnson", isMuted: true, isVideoOff: false },
+  // ];
 
   // Messages State
   const [messages, setMessages] = useState([]);
+
+  // participant State
+  const [participants, setParticipants] = useState([]);
 
   const handleSendMessage = (text) => {
     if (!user) {
@@ -85,12 +89,14 @@ export default function RoomClientWrapper({ roomId }) {
   };
 
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || !user) return;
 
     console.log("Joining room:", roomId);
 
     socket.emit("join-room", {
       roomId,
+      userId: user._id,
+      userName: user.fullName,
     });
 
     return () => {
@@ -98,22 +104,55 @@ export default function RoomClientWrapper({ roomId }) {
         roomId,
       });
     };
-  }, [roomId]);
+  }, [roomId, user]);
 
   useEffect(() => {
-    const handleUserJoined = ({ userId }) => {
-      console.log("🟢 User joined:", userId);
-    };
+    const handleUserJoined = ({ participant }) => {
+      console.log("🟢 User joined:", participant);
 
-    const handleUserLeft = ({ userId }) => {
-      console.log("🔴 User left:", userId);
+      setParticipants((prev) => {
+        // Check using userId
+        console.log("BEFORE ADD:", prev);
+        console.log("NEW PARTICIPANT:", participant);
+
+        const exists = prev.some(
+          (p) => String(p.userId) === String(participant.userId),
+        );
+
+        if (exists) {
+          console.log("⚠️ Participant already exists:", participant.userName);
+          return prev;
+        }
+
+        return [
+          ...prev,
+          {
+            ...participant,
+            name: participant.userName,
+            isMuted: false,
+            isVideoOff: false,
+          },
+        ];
+      });
     };
 
     socket.on("user-joined", handleUserJoined);
-    socket.on("user-left", handleUserLeft);
 
     return () => {
       socket.off("user-joined", handleUserJoined);
+    };
+  }, []);
+  useEffect(() => {
+    const handleUserLeft = ({ participant }) => {
+      setParticipants((prev) =>
+        prev.filter((p) => p.socketId !== participant.socketId),
+      );
+      toast.error(`🔴 ${participant.name} left`);
+    };
+
+    socket.on("user-left", handleUserLeft);
+
+    return () => {
       socket.off("user-left", handleUserLeft);
     };
   }, []);
@@ -150,7 +189,7 @@ export default function RoomClientWrapper({ roomId }) {
 
   useEffect(() => {
     if (!roomId) return;
-
+    // fatch Message
     const fetchMessages = async () => {
       try {
         const data = await getallMessage(roomId);
@@ -174,7 +213,32 @@ export default function RoomClientWrapper({ roomId }) {
       }
     };
 
+    // fatch user// participant
+    const fetchParticipants = async () => {
+      try {
+        const data = await getmeetingParticipant(roomId);
+
+        if (data.success) {
+          setParticipants(
+            data.participants.map((participant) => ({
+              ...participant,
+              isMuted: false,
+              isVideoOff: false,
+              isMicOn: true,
+              name: participant.userName,
+            })),
+          );
+        }
+      } catch (error) {
+        console.error("❌ Failed to fetch participants/Users:", error);
+      }
+    };
+
+    // call facthMessage
     fetchMessages();
+
+    // call fatch Users
+    fetchParticipants();
   }, [roomId]);
 
   return (

@@ -74,20 +74,12 @@ export function AppProvider({ children }) {
 
   const fetchUserData = useCallback(async () => {
     try {
-      console.log("🔵 fetchUserData started");
-
       const response = await getCurrentUser();
-
-      console.log("🟢 getCurrentUser response:", response);
 
       const userData =
         response?.user || response?.data?.user || response?.data || response;
 
-      console.log("👤 userData:", userData);
-
       if (userData) {
-        console.log("✅ User found, keeping token");
-
         setUser(userData);
         setIsLoggedIn(true);
       } else {
